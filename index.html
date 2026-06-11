@@ -70,10 +70,6 @@
     <div id="ticker-text" class="ticker-text whitespace-nowrap text-red-400 font-bold text-sm">  
      ⚡ درحال بارگذاری آخرین اخبار...  
     </div>  
-   </div><!-- Category Filter -->  
-   <div class="bg-gray-900 border-b border-gray-800 px-4 py-4 overflow-x-auto">  
-    <div class="max-w-6xl mx-auto flex gap-2 items-center"><button onclick="filterByCategory('all')" class="category-chip bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap" data-category="all">همه</button> <button onclick="filterByCategory('سیاسی')" class="category-chip bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap" data-category="سیاسی">سیاسی</button> <button onclick="filterByCategory('اقتصادی')" class="category-chip bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap" data-category="اقتصادی">اقتصادی</button> <button onclick="filterByCategory('ورزشی')" class="category-chip bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap" data-category="ورزشی">ورزشی</button> <button onclick="filterByCategory('فرهنگی')" class="category-chip bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap" data-category="فرهنگی">فرهنگی</button> <button onclick="filterByCategory('فناوری')" class="category-chip bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap" data-category="فناوری">فناوری</button>  
-    </div>  
    </div><!-- Main Content -->  
    <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-6">  
     <div id="news-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>  
@@ -191,7 +187,7 @@
   <script type="module">  
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";  
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";  
-    import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, onSnapshot, serverTimestamp, getDocs, writeBatch, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";  
+    import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, onSnapshot, serverTimestamp, getDocs, writeBatch, updateDoc, initializeFirestore } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
   
     const firebaseConfig = {  
       apiKey: "AIzaSyCb3H3-dbmmo6NL0AV_n2YegAJ8cHCtbAQ",  
@@ -205,7 +201,12 @@
   
     const app = initializeApp(firebaseConfig);  
     const auth = getAuth(app);  
-    const db = getFirestore(app);  
+    const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+  useFetchStreams: false,
+  host: restless-hall-faf2.shayan-asss9831.workers.dev,
+  ssl: true
+});  
     const ADMIN_EMAIL = "shayan.asss9831@gmail.com";  
   
     let currentUser = null;  
