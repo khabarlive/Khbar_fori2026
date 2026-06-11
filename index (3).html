@@ -1,0 +1,654 @@
+<!doctype html>  
+<html lang="fa" dir="rtl" class="h-full">  
+ <head><script src="/_sdk/telemetry_sdk.js"></script>  
+  <meta charset="UTF-8">  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>  
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>  
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&amp;display=swap" rel="stylesheet">  
+  <style>  
+    * { font-family: 'Vazirmatn', sans-serif; }  
+    @keyframes ticker {  
+      0% { transform: translateX(-100%); }  
+      100% { transform: translateX(100%); }  
+    }  
+    .ticker-text { animation: ticker 12s linear infinite; }  
+    @keyframes pulse-dot {  
+      0%, 100% { opacity: 1; }  
+      50% { opacity: 0.3; }  
+    }  
+    .pulse-dot { animation: pulse-dot 1s ease-in-out infinite; }  
+    @keyframes slideIn {  
+      from { opacity: 0; transform: translateY(20px); }  
+      to { opacity: 1; transform: translateY(0); }  
+    }  
+    .slide-in { animation: slideIn 0.4s ease-out forwards; }  
+    @keyframes fadeOut {  
+      from { opacity: 1; transform: scale(1); }  
+      to { opacity: 0; transform: scale(0.95); }  
+    }  
+    .fade-out { animation: fadeOut 0.4s ease-out forwards; }  
+    @keyframes slideInRight {  
+      from { opacity: 0; transform: translateX(20px); }  
+      to { opacity: 1; transform: translateX(0); }  
+    }  
+    .toast { animation: slideInRight 0.3s ease-out forwards; }  
+    .skeleton {  
+      background: linear-gradient(90deg, #1f2937 25%, #374151 50%, #1f2937 75%);  
+      background-size: 200% 100%;  
+      animation: shimmer 2s infinite;  
+    }  
+    @keyframes shimmer {  
+      0% { background-position: 200% 0; }  
+      100% { background-position: -200% 0; }  
+    }  
+    body { box-sizing: border-box; }  
+  </style>  
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>  
+  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>  
+ </head>  
+ <body class="h-full bg-gray-950 text-white overflow-auto">  
+  <div id="app" class="w-full h-full flex flex-col">  
+   <!-- Header -->  
+   <header class="bg-gradient-to-l from-red-900 via-red-700 to-red-900 shadow-2xl border-b-4 border-yellow-500">  
+    <div class="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">  
+     <div class="flex items-center gap-3">  
+      <div class="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center">  
+       <i data-lucide="zap" class="w-6 h-6 text-red-900"></i>  
+      </div>  
+      <h1 class="text-2xl md:text-3xl font-black tracking-tight text-white drop-shadow-lg">خبر فوری</h1>  
+     </div>  
+     <div class="flex items-center gap-3">  
+      <button id="login-modal-btn" class="bg-yellow-500 hover:bg-yellow-400 text-red-900 font-bold px-4 py-2 rounded-lg transition-all hover:scale-105 flex items-center gap-2 shadow-lg"> <i data-lucide="log-in" class="w-4 h-4"></i> پنل مدیریت </button> <button id="admin-btn" class="bg-yellow-500 hover:bg-yellow-400 text-red-900 font-bold px-4 py-2 rounded-lg transition-all hover:scale-105 flex items-center gap-2 shadow-lg hidden"> <i data-lucide="settings" class="w-4 h-4"></i> پنل مدیریت </button> <button id="logout-btn" class="bg-red-600 hover:bg-red-500 text-white font-bold px-4 py-2 rounded-lg transition-all hover:scale-105 flex items-center gap-2 shadow-lg hidden"> <i data-lucide="log-out" class="w-4 h-4"></i> خروج </button>  
+     </div>  
+    </div>  
+   </header><!-- Ticker -->  
+   <div class="bg-black border-b border-red-800 overflow-hidden py-2 relative">  
+    <div class="flex items-center gap-3 absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-red-700 px-3 py-1 rounded-sm">  
+     <span class="w-2 h-2 bg-yellow-400 rounded-full pulse-dot"></span> <span class="text-xs font-bold text-yellow-400">زنده</span>  
+    </div>  
+    <div id="ticker-text" class="ticker-text whitespace-nowrap text-red-400 font-bold text-sm">  
+     ⚡ درحال بارگذاری آخرین اخبار...  
+    </div>  
+   </div><!-- Category Filter -->  
+   <div class="bg-gray-900 border-b border-gray-800 px-4 py-4 overflow-x-auto">  
+    <div class="max-w-6xl mx-auto flex gap-2 items-center"><button onclick="filterByCategory('all')" class="category-chip bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap" data-category="all">همه</button> <button onclick="filterByCategory('سیاسی')" class="category-chip bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap" data-category="سیاسی">سیاسی</button> <button onclick="filterByCategory('اقتصادی')" class="category-chip bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap" data-category="اقتصادی">اقتصادی</button> <button onclick="filterByCategory('ورزشی')" class="category-chip bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap" data-category="ورزشی">ورزشی</button> <button onclick="filterByCategory('فرهنگی')" class="category-chip bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap" data-category="فرهنگی">فرهنگی</button> <button onclick="filterByCategory('فناوری')" class="category-chip bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-full text-sm font-bold transition-all whitespace-nowrap" data-category="فناوری">فناوری</button>  
+    </div>  
+   </div><!-- Main Content -->  
+   <main class="flex-1 max-w-6xl mx-auto w-full px-4 py-6">  
+    <div id="news-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>  
+    <div id="empty-state" class="text-center py-20 text-gray-500 hidden">  
+     <i data-lucide="newspaper" class="w-16 h-16 mx-auto mb-4 opacity-30"></i>  
+     <p class="text-lg">هنوز خبری منتشر نشده</p>  
+     <p class="text-sm mt-2">از پنل مدیریت خبر جدید اضافه کنید</p>  
+    </div>  
+   </main><!-- Toast Container -->  
+   <div id="toast-container" class="fixed bottom-4 left-4 space-y-2 z-40 pointer-events-none"></div><!-- Login Modal -->  
+   <div id="login-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">  
+    <div class="bg-gray-900 border border-red-700 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">  
+     <div class="bg-red-800 px-6 py-4 flex items-center gap-2">  
+      <i data-lucide="log-in" class="w-5 h-5"></i>  
+      <h2 class="text-lg font-bold">ورود به پنل ادمین</h2>  
+     </div>  
+     <form id="login-form" class="p-6 space-y-4">  
+      <div>  
+       <label for="login-email" class="block text-sm font-bold text-gray-300 mb-1">ایمیل</label> <input id="login-email" type="email" required class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition" placeholder="ایمیل خود را وارد کنید...">  
+      </div>  
+      <div>  
+       <label for="login-password" class="block text-sm font-bold text-gray-300 mb-1">رمز عبور</label> <input id="login-password" type="password" required class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition" placeholder="رمز عبور خود را وارد کنید...">  
+      </div><button type="submit" id="login-btn" class="w-full bg-gradient-to-l from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white font-bold py-3 rounded-lg transition-all hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2"> <i data-lucide="log-in" class="w-4 h-4"></i> ورود </button>  
+      <div id="login-message" class="text-center text-sm hidden"></div>  
+     </form>  
+    </div>  
+   </div><!-- Admin Panel -->  
+   <div id="admin-panel" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">  
+    <div class="bg-gray-900 border border-red-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">  
+     <div class="bg-red-800 px-6 py-4 flex items-center justify-between">  
+      <h2 class="text-lg font-bold flex items-center gap-2"><i data-lucide="plus-circle" class="w-5 h-5"></i> انتشار خبر جدید</h2><button id="close-admin" class="text-white/70 hover:text-white transition"> <i data-lucide="x" class="w-6 h-6"></i> </button>  
+     </div>  
+     <form id="news-form" class="p-6 space-y-4">  
+      <div class="grid grid-cols-2 gap-4 bg-gray-800 p-4 rounded-lg mb-4">  
+       <div class="text-center">  
+        <div class="text-2xl font-bold text-red-400" id="total-news">  
+         0  
+        </div>  
+        <p class="text-xs text-gray-400">کل اخبار</p>  
+       </div>  
+       <div class="text-center">  
+        <div class="text-2xl font-bold text-yellow-400" id="breaking-news">  
+         0  
+        </div>  
+        <p class="text-xs text-gray-400">اخبار فوری</p>  
+       </div>  
+      </div>  
+      <div>  
+       <label for="news-title" class="block text-sm font-bold text-gray-300 mb-1">عنوان خبر</label> <input id="news-title" type="text" required class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition" placeholder="عنوان خبر را وارد کنید...">  
+      </div>  
+      <div>  
+       <label for="news-summary" class="block text-sm font-bold text-gray-300 mb-1">خلاصه خبر</label> <textarea id="news-summary" rows="3" required class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition resize-none" placeholder="خلاصه‌ای از خبر بنویسید..."></textarea>  
+      </div>  
+      <div class="flex gap-4">  
+       <div class="flex-1">  
+        <label for="news-category" class="block text-sm font-bold text-gray-300 mb-1">دسته‌بندی</label> <select id="news-category" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-red-500 outline-none"> <option value="سیاسی">سیاسی</option> <option value="اقتصادی">اقتصادی</option> <option value="ورزشی">ورزشی</option> <option value="فرهنگی">فرهنگی</option> <option value="فناوری">فناوری</option> </select>  
+       </div>  
+       <div class="flex items-end pb-1">  
+        <label class="flex items-center gap-2 cursor-pointer bg-gray-800 border border-gray-700 rounded-lg px-4 py-3"> <input type="checkbox" id="news-breaking" class="accent-red-500 w-4 h-4"> <span class="text-sm font-bold text-yellow-400">فوری</span> </label>  
+       </div>  
+      </div><button type="submit" id="submit-btn" class="w-full bg-gradient-to-l from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white font-bold py-3 rounded-lg transition-all hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2"> <i data-lucide="send" class="w-4 h-4"></i> انتشار خبر </button>  
+      <div id="form-message" class="text-center text-sm hidden"></div><button type="button" id="clear-all-btn" class="w-full bg-red-900 hover:bg-red-800 text-white font-bold py-2 rounded-lg transition-all flex items-center justify-center gap-2 text-sm"> <i data-lucide="trash-2" class="w-4 h-4"></i> حذف تمامی اخبار </button>  
+     </form>  
+    </div>  
+   </div><!-- Delete Confirm -->  
+   <div id="delete-confirm" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">  
+    <div class="bg-gray-900 border border-red-700 rounded-xl p-6 max-w-sm w-full text-center">  
+     <i data-lucide="alert-triangle" class="w-12 h-12 text-yellow-500 mx-auto mb-3"></i>  
+     <p class="font-bold mb-4">آیا از حذف این خبر مطمئنید؟</p>  
+     <div class="flex gap-3">  
+      <button id="confirm-delete" class="flex-1 bg-red-600 hover:bg-red-500 py-2 rounded-lg font-bold transition">حذف</button> <button id="cancel-delete" class="flex-1 bg-gray-700 hover:bg-gray-600 py-2 rounded-lg font-bold transition">انصراف</button>  
+     </div>  
+    </div>  
+   </div><!-- Clear All Confirm -->  
+   <div id="clear-all-confirm" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">  
+    <div class="bg-gray-900 border border-red-700 rounded-xl p-6 max-w-sm w-full text-center">  
+     <i data-lucide="alert-octagon" class="w-12 h-12 text-red-500 mx-auto mb-3"></i>  
+     <p class="font-bold mb-2">حذف تمامی اخبار</p>  
+     <p class="text-sm text-gray-400 mb-4">این کار غیرقابل بازگشت است! برای تایید، کلمه <strong>"تایید"</strong> را وارد کنید:</p><input id="clear-confirmation-text" type="text" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white mb-4 text-center focus:border-red-500 outline-none" placeholder="تایید را وارد کنید...">  
+     <div class="flex gap-3">  
+      <button id="confirm-clear-all" class="flex-1 bg-red-600 hover:bg-red-500 py-2 rounded-lg font-bold transition disabled:opacity-50 disabled:cursor-not-allowed">حذف کل</button> <button id="cancel-clear-all" class="flex-1 bg-gray-700 hover:bg-gray-600 py-2 rounded-lg font-bold transition">انصراف</button>  
+     </div>  
+    </div>  
+   </div><!-- Edit Modal -->  
+   <div id="edit-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">  
+    <div class="bg-gray-900 border border-red-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">  
+     <div class="bg-red-800 px-6 py-4 flex items-center justify-between">  
+      <h2 class="text-lg font-bold flex items-center gap-2"><i data-lucide="edit" class="w-5 h-5"></i> ویرایش خبر</h2><button id="close-edit" class="text-white/70 hover:text-white transition"> <i data-lucide="x" class="w-6 h-6"></i> </button>  
+     </div>  
+     <form id="edit-form" class="p-6 space-y-4">  
+      <div>  
+       <label for="edit-title" class="block text-sm font-bold text-gray-300 mb-1">عنوان خبر</label> <input id="edit-title" type="text" required class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition" placeholder="عنوان خبر را وارد کنید...">  
+      </div>  
+      <div>  
+       <label for="edit-summary" class="block text-sm font-bold text-gray-300 mb-1">خلاصه خبر</label> <textarea id="edit-summary" rows="3" required class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-red-500 focus:ring-1 focus:ring-red-500 outline-none transition resize-none" placeholder="خلاصه‌ای از خبر بنویسید..."></textarea>  
+      </div>  
+      <div class="flex gap-4">  
+       <div class="flex-1">  
+        <label for="edit-category" class="block text-sm font-bold text-gray-300 mb-1">دسته‌بندی</label> <select id="edit-category" class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white focus:border-red-500 outline-none"> <option value="سیاسی">سیاسی</option> <option value="اقتصادی">اقتصادی</option> <option value="ورزشی">ورزشی</option> <option value="فرهنگی">فرهنگی</option> <option value="فناوری">فناوری</option> </select>  
+       </div>  
+       <div class="flex items-end pb-1">  
+        <label class="flex items-center gap-2 cursor-pointer bg-gray-800 border border-gray-700 rounded-lg px-4 py-3"> <input type="checkbox" id="edit-breaking" class="accent-red-500 w-4 h-4"> <span class="text-sm font-bold text-yellow-400">فوری</span> </label>  
+       </div>  
+      </div><button type="submit" id="edit-submit-btn" class="w-full bg-gradient-to-l from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white font-bold py-3 rounded-lg transition-all hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2"> <i data-lucide="check" class="w-4 h-4"></i> ذخیره تغییرات </button>  
+      <div id="edit-message" class="text-center text-sm hidden"></div>  
+     </form>  
+    </div>  
+   </div><!-- Footer -->  
+   <footer class="bg-gray-900 border-t border-gray-800 mt-8">  
+    <div class="max-w-6xl mx-auto px-4 py-6 flex items-center justify-between">  
+     <p class="text-sm text-gray-400">© 2026 خبر فوری - تمام حقوق محفوظ است</p><a href="https://t.me/khbar_fori2026" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 transition flex items-center gap-2 font-bold text-sm"> <i data-lucide="send" class="w-4 h-4"></i> کانال تلگرام </a>  
+    </div>  
+   </footer>  
+  </div><!-- Firebase Scripts -->  
+  <script type="module">  
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";  
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";  
+    import { getFirestore, collection, addDoc, deleteDoc, doc, query, orderBy, onSnapshot, serverTimestamp, getDocs, writeBatch, updateDoc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";  
+  
+    const firebaseConfig = {  
+      apiKey: "AIzaSyCb3H3-dbmmo6NL0AV_n2YegAJ8cHCtbAQ",  
+      authDomain: "khabar-fori.firebaseapp.com",  
+      projectId: "khabar-fori",  
+      storageBucket: "khabar-fori.firebasestorage.app",  
+      messagingSenderId: "166536774439",  
+      appId: "1:166536774439:web:036fd653c66d1e7b129f02",  
+      measurementId: "G-WCH5KPVNL3"  
+    };  
+  
+    const app = initializeApp(firebaseConfig);  
+    const auth = getAuth(app);  
+    const db = getFirestore(app);  
+    const ADMIN_EMAIL = "shayan.asss9831@gmail.com";  
+  
+    let currentUser = null;  
+    let allNews = [];  
+    let filteredNews = [];  
+    let currentFilter = 'all';  
+    let deleteTarget = null;  
+    let editTarget = null;  
+  
+    // Toast notification system  
+    function showToast(message, type = 'info') {  
+      const container = document.getElementById('toast-container');  
+      const toast = document.createElement('div');  
+      const bgColor = type === 'success' ? 'bg-green-600' : type === 'error' ? 'bg-red-600' : 'bg-blue-600';  
+        
+      toast.className = `toast ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 pointer-events-auto`;  
+      toast.innerHTML = `<span>${message}</span>`;  
+        
+      container.appendChild(toast);  
+        
+      setTimeout(() => {  
+        toast.classList.add('fade-out');  
+        setTimeout(() => toast.remove(), 400);  
+      }, 3000);  
+    }  
+  
+    // Calculate reading time  
+    function calculateReadingTime(text) {  
+      const wordsPerMinute = 200;  
+      const words = text.split(' ').length;  
+      const minutes = Math.ceil(words / wordsPerMinute);  
+      return minutes < 1 ? 'کمتر از یک دقیقه' : `${minutes} دقیقه`;  
+    }  
+  
+    // Update ticker with breaking news  
+    function updateTicker(news) {  
+      const breaking = news.filter(n => n.is_breaking).slice(0, 3);  
+      if (breaking.length === 0) {  
+        document.getElementById('ticker-text').textContent = '⚡ درحال بارگذاری آخرین اخبار...';  
+        return;  
+      }  
+      const tickerText = breaking.map(n => `🔴 ${n.title}`).join(' | ');  
+      document.getElementById('ticker-text').textContent = tickerText;  
+    }  
+  
+    // Monitor auth state  
+    onAuthStateChanged(auth, (user) => {  
+      currentUser = user;  
+      updateUI();  
+    });  
+  
+    // Update UI based on auth state  
+    function updateUI() {  
+      const loginModalBtn = document.getElementById('login-modal-btn');  
+      const adminBtn = document.getElementById('admin-btn');  
+      const logoutBtn = document.getElementById('logout-btn');  
+  
+      if (currentUser && currentUser.email === ADMIN_EMAIL) {  
+        loginModalBtn.classList.add('hidden');  
+        adminBtn.classList.remove('hidden');  
+        logoutBtn.classList.remove('hidden');  
+      } else {  
+        loginModalBtn.classList.remove('hidden');  
+        adminBtn.classList.add('hidden');  
+        logoutBtn.classList.add('hidden');  
+      }  
+    }  
+  
+    // Open login modal  
+    document.getElementById('login-modal-btn').addEventListener('click', () => {  
+      document.getElementById('login-modal').classList.remove('hidden');  
+      lucide.createIcons();  
+    });  
+  
+    // Close login modal on background click  
+    document.getElementById('login-modal').addEventListener('click', (e) => {  
+      if (e.target === document.getElementById('login-modal')) {  
+        document.getElementById('login-modal').classList.add('hidden');  
+      }  
+    });  
+  
+    // Login form  
+    document.getElementById('login-form').addEventListener('submit', async (e) => {  
+      e.preventDefault();  
+      const email = document.getElementById('login-email').value;  
+      const password = document.getElementById('login-password').value;  
+      const btn = document.getElementById('login-btn');  
+      const msg = document.getElementById('login-message');  
+  
+      btn.disabled = true;  
+      btn.innerHTML = '<span class="animate-spin">⏳</span> درحال ورود...';  
+  
+      try {  
+        await signInWithEmailAndPassword(auth, email, password);  
+        document.getElementById('login-modal').classList.add('hidden');  
+        document.getElementById('login-email').value = '';  
+        document.getElementById('login-password').value = '';  
+        msg.classList.add('hidden');  
+        showToast('✅ خوش‌آمدید!', 'success');  
+      } catch (error) {  
+        msg.textContent = '❌ ایمیل یا رمز عبور اشتباه است';  
+        msg.className = 'text-center text-sm text-red-400';  
+        msg.classList.remove('hidden');  
+        showToast('❌ خطا در ورود', 'error');  
+      }  
+  
+      btn.disabled = false;  
+      btn.innerHTML = '<i data-lucide="log-in" class="w-4 h-4"></i> ورود';  
+      lucide.createIcons();  
+    });  
+  
+    // Logout  
+    document.getElementById('logout-btn').addEventListener('click', async () => {  
+      await signOut(auth);  
+      document.getElementById('login-email').value = '';  
+      document.getElementById('login-password').value = '';  
+      document.getElementById('login-message').classList.add('hidden');  
+      document.getElementById('news-form').reset();  
+      document.getElementById('form-message').classList.add('hidden');  
+      document.getElementById('admin-panel').classList.add('hidden');  
+      showToast('✅ خروج موفق بود', 'success');  
+    });  
+  
+    // Open admin panel  
+    document.getElementById('admin-btn').addEventListener('click', () => {  
+      document.getElementById('admin-panel').classList.remove('hidden');  
+      lucide.createIcons();  
+    });  
+  
+    // Close admin panel  
+    document.getElementById('close-admin').addEventListener('click', () => {  
+      document.getElementById('admin-panel').classList.add('hidden');  
+    });  
+  
+    // News form submission  
+    document.getElementById('news-form').addEventListener('submit', async (e) => {  
+      e.preventDefault();  
+      const btn = document.getElementById('submit-btn');  
+      const msg = document.getElementById('form-message');  
+  
+      btn.disabled = true;  
+      btn.innerHTML = '<span class="animate-spin">⏳</span> درحال ارسال...';  
+  
+      try {  
+        await addDoc(collection(db, 'news'), {  
+          title: document.getElementById('news-title').value,  
+          summary: document.getElementById('news-summary').value,  
+          category: document.getElementById('news-category').value,  
+          is_breaking: document.getElementById('news-breaking').checked,  
+          reactions: { thumbsup: 0, fire: 0, heart: 0 },  
+          created_at: serverTimestamp()  
+        });  
+  
+        msg.textContent = '✅ خبر با موفقیت منتشر شد';  
+        msg.className = 'text-center text-sm text-green-400';  
+        msg.classList.remove('hidden');  
+        document.getElementById('news-form').reset();  
+        showToast('✅ خبر منتشر شد!', 'success');  
+        setTimeout(() => msg.classList.add('hidden'), 2000);  
+      } catch (error) {  
+        msg.textContent = '❌ خطا در انتشار خبر';  
+        msg.className = 'text-center text-sm text-red-400';  
+        msg.classList.remove('hidden');  
+        showToast('❌ خطا در انتشار خبر', 'error');  
+      }  
+  
+      btn.disabled = false;  
+      btn.innerHTML = '<i data-lucide="send" class="w-4 h-4"></i> انتشار خبر';  
+      lucide.createIcons();  
+    });  
+  
+    // Clear all news confirmation  
+    document.getElementById('clear-all-btn').addEventListener('click', () => {  
+      document.getElementById('clear-all-confirm').classList.remove('hidden');  
+      document.getElementById('clear-confirmation-text').value = '';  
+      lucide.createIcons();  
+    });  
+  
+    document.getElementById('cancel-clear-all').addEventListener('click', () => {  
+      document.getElementById('clear-all-confirm').classList.add('hidden');  
+    });  
+  
+    document.getElementById('clear-confirmation-text').addEventListener('input', (e) => {  
+      const btn = document.getElementById('confirm-clear-all');  
+      btn.disabled = e.target.value !== 'تایید';  
+    });  
+  
+    document.getElementById('confirm-clear-all').addEventListener('click', async () => {  
+      const btn = document.getElementById('confirm-clear-all');  
+      btn.disabled = true;  
+      btn.textContent = '...';  
+  
+      try {  
+        const snapshot = await getDocs(collection(db, 'news'));  
+        const batch = writeBatch(db);  
+        snapshot.docs.forEach(doc => {  
+          batch.delete(doc.ref);  
+        });  
+        await batch.commit();  
+        document.getElementById('clear-all-confirm').classList.add('hidden');  
+        showToast('✅ تمام اخبار حذف شدند', 'success');  
+      } catch (error) {  
+        showToast('❌ خطا در حذف اخبار', 'error');  
+      }  
+  
+      btn.disabled = false;  
+      btn.textContent = 'حذف کل';  
+    });  
+  
+    // Load news with realtime updates  
+    const q = query(collection(db, 'news'), orderBy('created_at', 'desc'));  
+    onSnapshot(q, (snapshot) => {  
+      allNews = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));  
+      updateTicker(allNews);  
+      updateStats();  
+      applyFilter();  
+    });  
+  
+    // Update admin panel stats  
+    function updateStats() {  
+      const total = allNews.length;  
+      const breaking = allNews.filter(n => n.is_breaking).length;  
+      document.getElementById('total-news').textContent = total;  
+      document.getElementById('breaking-news').textContent = breaking;  
+    }  
+  
+    // Filter by category  
+    window.filterByCategory = (category) => {  
+      currentFilter = category;  
+      document.querySelectorAll('.category-chip').forEach(btn => {  
+        btn.classList.remove('bg-red-600');  
+        btn.classList.add('bg-gray-700');  
+        if (btn.dataset.category === category) {  
+          btn.classList.remove('bg-gray-700');  
+          btn.classList.add('bg-red-600');  
+        }  
+      });  
+      applyFilter();  
+    };  
+  
+    function applyFilter() {  
+      if (currentFilter === 'all') {  
+        filteredNews = allNews;  
+      } else {  
+        filteredNews = allNews.filter(n => n.category === currentFilter);  
+      }  
+      renderNews(filteredNews);  
+    }  
+  
+    function renderNews(data) {  
+      const list = document.getElementById('news-list');  
+      const empty = document.getElementById('empty-state');  
+  
+      if (!data.length) {  
+        list.innerHTML = '';  
+        empty.classList.remove('hidden');  
+        return;  
+      }  
+  
+      empty.classList.add('hidden');  
+      list.innerHTML = data.map(item => {  
+        const time = item.created_at ? new Date(item.created_at.seconds * 1000).toLocaleString('fa-IR', { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' }) : '';  
+        const readingTime = calculateReadingTime(item.summary);  
+        const reactions = item.reactions || { thumbsup: 0, fire: 0, heart: 0 };  
+          
+        const editDeleteBtns = currentUser && currentUser.email === ADMIN_EMAIL ? `  
+          <div class="flex gap-2 mt-4">  
+            <button onclick="requestEdit('${item.id}')" class="text-xs text-blue-400 hover:text-blue-300 transition flex items-center gap-1 flex-1 justify-center bg-blue-900/30 hover:bg-blue-900/50 py-1 rounded">  
+              <i data-lucide="edit" class="w-3 h-3"></i> ویرایش  
+            </button>  
+            <button onclick="requestDelete('${item.id}')" class="text-xs text-red-400 hover:text-red-300 transition flex items-center gap-1 flex-1 justify-center bg-red-900/30 hover:bg-red-900/50 py-1 rounded">  
+              <i data-lucide="trash-2" class="w-3 h-3"></i> حذف  
+            </button>  
+          </div>  
+        ` : '';  
+  
+        return `  
+          <div class="slide-in bg-gray-800 border ${item.is_breaking ? 'border-red-500 shadow-red-500/20 shadow-lg' : 'border-gray-700'} rounded-xl overflow-hidden hover:border-red-500 transition-all group h-full flex flex-col">  
+            ${item.is_breaking ? '<div class="bg-red-600 text-center py-1 text-xs font-bold tracking-wider flex items-center justify-center gap-1"><span class="w-2 h-2 bg-yellow-400 rounded-full pulse-dot"></span> خبر فوری</div>' : ''}  
+            <div class="p-5 flex-1 flex flex-col">  
+              <div class="flex items-center gap-2 mb-3 flex-wrap">  
+                <span class="text-[10px] bg-red-900/50 text-red-300 px-2 py-0.5 rounded-full font-bold">${item.category}</span>  
+                <span class="text-[10px] text-gray-500">${time}</span>  
+                <span class="text-[10px] bg-gray-700 text-gray-300 px-2 py-0.5 rounded-full">⏱️ ${readingTime}</span>  
+              </div>  
+              <h3 class="font-bold text-base mb-2 group-hover:text-red-400 transition leading-relaxed">${item.title}</h3>  
+              <p class="text-sm text-gray-400 leading-relaxed flex-1 mb-3">${item.summary}</p>  
+                
+              <div class="flex gap-2 mb-3">  
+                <button onclick="addReaction('${item.id}', 'thumbsup')" class="text-sm bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded transition flex items-center gap-1">  
+                  👍 ${reactions.thumbsup || 0}  
+                </button>  
+                <button onclick="addReaction('${item.id}', 'fire')" class="text-sm bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded transition flex items-center gap-1">  
+                  🔥 ${reactions.fire || 0}  
+                </button>  
+                <button onclick="addReaction('${item.id}', 'heart')" class="text-sm bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded transition flex items-center gap-1">  
+                  ❤️ ${reactions.heart || 0}  
+                </button>  
+                
+              </div>  
+  
+              <div class="flex gap-2 text-xs">  
+                <button onclick="shareNews('${item.id}')" class="text-gray-400 hover:text-blue-400 transition flex items-center gap-1 flex-1 justify-center">  
+                  <i data-lucide="share-2" class="w-3 h-3"></i> کپی  
+                </button>  
+                <a href="https://t.me/share/url?url=${encodeURIComponent(window.location.href + '?news=' + item.id)}&text=${encodeURIComponent(item.title)}" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300 transition flex items-center gap-1 flex-1 justify-center">  
+                  <i data-lucide="send" class="w-3 h-3"></i> تلگرام  
+                </a>  
+                <a href="https://twitter.com/intent/tweet?text=${encodeURIComponent(item.title)}&url=${encodeURIComponent(window.location.href)}" target="_blank" rel="noopener noreferrer" class="text-blue-300 hover:text-blue-200 transition flex items-center gap-1 flex-1 justify-center">  
+                  <i data-lucide="twitter" class="w-3 h-3"></i> X  
+                </a>  
+              </div>  
+  
+              ${editDeleteBtns}  
+            </div>  
+          </div>`;  
+      }).join('');  
+      lucide.createIcons();  
+    }  
+  
+    // Reactions system  
+    window.addReaction = async (newsId, reactionType) => {  
+      const news = allNews.find(n => n.id === newsId);  
+      if (!news) return;  
+  
+      const reactions = news.reactions || { thumbsup: 0, fire: 0, heart: 0 };  
+      reactions[reactionType] = (reactions[reactionType] || 0) + 1;  
+  
+      try {  
+        await updateDoc(doc(db, 'news', newsId), { reactions });  
+      } catch (error) {  
+        console.error('Error updating reaction:', error);  
+      }  
+    };  
+  
+    // Share news  
+    window.shareNews = (newsId) => {  
+      const news = allNews.find(n => n.id === newsId);  
+      if (!news) return;  
+  
+      const text = `${news.title}\n\n${news.summary}`;  
+      if (navigator.clipboard) {  
+        navigator.clipboard.writeText(text).then(() => {  
+          showToast('✅ خبر کپی شد', 'success');  
+        });  
+      }  
+    };  
+  
+    // Delete news  
+    window.requestDelete = (id) => {  
+      deleteTarget = id;  
+      document.getElementById('delete-confirm').classList.remove('hidden');  
+    };  
+  
+    document.getElementById('confirm-delete').addEventListener('click', async () => {  
+      if (!deleteTarget) return;  
+      const btn = document.getElementById('confirm-delete');  
+      btn.textContent = '...';  
+      btn.disabled = true;  
+  
+      try {  
+        const newsEl = document.querySelector(`[data-news-id="${deleteTarget}"]`);  
+        if (newsEl) {  
+          newsEl.classList.add('fade-out');  
+          await new Promise(r => setTimeout(r, 400));  
+        }  
+        await deleteDoc(doc(db, 'news', deleteTarget));  
+        showToast('✅ خبر حذف شد', 'success');  
+      } catch (error) {  
+        showToast('❌ خطا در حذف خبر', 'error');  
+      }  
+  
+      btn.textContent = 'حذف';  
+      btn.disabled = false;  
+      deleteTarget = null;  
+      document.getElementById('delete-confirm').classList.add('hidden');  
+    });  
+  
+    document.getElementById('cancel-delete').addEventListener('click', () => {  
+      deleteTarget = null;  
+      document.getElementById('delete-confirm').classList.add('hidden');  
+    });  
+  
+    // Edit news  
+    window.requestEdit = (id) => {  
+      editTarget = id;  
+      const news = allNews.find(n => n.id === id);  
+      if (!news) return;  
+  
+      document.getElementById('edit-title').value = news.title;  
+      document.getElementById('edit-summary').value = news.summary;  
+      document.getElementById('edit-category').value = news.category;  
+      document.getElementById('edit-breaking').checked = news.is_breaking;  
+      document.getElementById('edit-modal').classList.remove('hidden');  
+      lucide.createIcons();  
+    };  
+  
+    document.getElementById('close-edit').addEventListener('click', () => {  
+      document.getElementById('edit-modal').classList.add('hidden');  
+      editTarget = null;  
+    });  
+  
+    document.getElementById('edit-form').addEventListener('submit', async (e) => {  
+      e.preventDefault();  
+      if (!editTarget) return;  
+  
+      const btn = document.getElementById('edit-submit-btn');  
+      const msg = document.getElementById('edit-message');  
+  
+      btn.disabled = true;  
+      btn.innerHTML = '<span class="animate-spin">⏳</span> درحال ذخیره...';  
+  
+      try {  
+        await updateDoc(doc(db, 'news', editTarget), {  
+          title: document.getElementById('edit-title').value,  
+          summary: document.getElementById('edit-summary').value,  
+          category: document.getElementById('edit-category').value,  
+          is_breaking: document.getElementById('edit-breaking').checked  
+        });  
+  
+        msg.textContent = '✅ تغییرات ذخیره شد';  
+        msg.className = 'text-center text-sm text-green-400';  
+        msg.classList.remove('hidden');  
+        showToast('✅ خبر ویرایش شد!', 'success');  
+        setTimeout(() => {  
+          document.getElementById('edit-modal').classList.add('hidden');  
+          msg.classList.add('hidden');  
+          editTarget = null;  
+        }, 1500);  
+      } catch (error) {  
+        msg.textContent = '❌ خطا در ویرایش خبر';  
+        msg.className = 'text-center text-sm text-red-400';  
+        msg.classList.remove('hidden');  
+        showToast('❌ خطا در ویرایش خبر', 'error');  
+      }  
+  
+      btn.disabled = false;  
+      btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> ذخیره تغییرات';  
+      lucide.createIcons();  
+    });  
+  
+    // Initialize Lucide icons  
+    lucide.createIcons();  
+  </script>  
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a09c52192aade409',t:'MTc4MTEzNTg3MA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>  
+</html>  
